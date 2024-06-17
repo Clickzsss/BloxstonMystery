@@ -1,0 +1,144 @@
+-- Script by nextech99_
+-- This is an open-source Lua script
+-- Feel free to modify and redistribute
+
+-- Define colors for different roles
+local rolesandcolors = {
+    ["Mafia"] = Color3.fromRGB(255, 0, 0),
+    ["Vampire"] = Color3.fromRGB(0, 255, 0),
+    ["Coven"] = Color3.fromRGB(255, 255, 0),
+    ["Werewolf"] = Color3.fromRGB(64, 64, 64),
+    ["Bodyguard"] = Color3.fromRGB(0, 0, 255),
+    ["Medic"] = Color3.fromRGB(0, 0, 255),
+    ["Guardian"] = Color3.fromRGB(0, 0, 255),
+    ["Vigilante"] = Color3.fromRGB(0, 0, 255),
+    ["Liberator"] = Color3.fromRGB(0, 0, 255),
+    ["Veteran"] = Color3.fromRGB(0, 0, 255),
+    ["Bounty Hunter"] = Color3.fromRGB(0, 0, 255),
+    ["Killer"] = Color3.fromRGB(255, 0, 0),
+    ["Assassin"] = Color3.fromRGB(255, 0, 0),
+    ["Enchantress"] = Color3.fromRGB(255, 215, 0), -- New role added
+    ["Hitman"] = Color3.fromRGB(100, 149, 237), -- New role added
+    ["Crusader"] = Color3.fromRGB(255, 192, 203), -- New role added
+    ["Lookout"] = Color3.fromRGB(30, 144, 255), -- New town role: Lookout
+    ["Spy"] = Color3.fromRGB(0, 206, 209), -- New town role: Spy
+    ["Jailor"] = Color3.fromRGB(255, 165, 0), -- Jailor role color
+    ["Therapist"] = Color3.fromRGB(255, 165, 0), -- Therapist role color (same as Jailor for example)
+}
+
+-- Define mappings of tools to roles
+local gunsandroles = {
+    ["Shield"] = "Bodyguard",
+    ["Knife"] = "Killer",
+    ["GuardianSword"] = "Guardian",
+    ["Revolver"] = "Vigilante",
+    ["Katana"] = "Assassin",
+    ["ShieldK"] = "Liberator",
+    ["Medkit"] = "Medic",
+    ["Pistol"] = "Veteran",
+    ["Winchester"] = "Bounty Hunter",
+    ["MagicStaff"] = "Enchantress", -- Enchantress uses MagicStaff
+    ["SlicedPistol"] = "Hitman", -- Hitman uses SlicedPistol
+    ["Sword"] = "Crusader", -- Crusader uses Sword
+}
+
+-- Function to bypass anticheat measures
+local function bypac()
+    local ACRemote = game:GetService("ReplicatedStorage").Remotes.FinishAudio
+    local ACBypass
+    ACBypass = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod();
+        local args = ...;
+
+        -- Bypass anticheat if conditions are met
+        if not checkcaller() then
+            if typeof(self) == "Instance" and self == ACRemote and method == "FireServer" then
+                return wait(9e9);
+            end
+        end
+
+        return ACBypass(self, ...)
+    end)
+end
+
+-- Function to send system messages to players
+local function sendmsg(msg)
+    game.StarterGui:SetCore("ChatMakeSystemMessage", {
+        Text = msg;
+    })
+end
+
+-- Main logic: Starting sequence
+sendmsg("BOXTON CLI")
+sendmsg("[CLI] Bypassing anticheat")
+wait(1)
+bypac() -- Bypass the anticheat
+wait()
+sendmsg("[CLI] Anticheat bypassed!")
+wait()
+sendmsg("[CLI] Snooping for roles..")
+
+-- Detecting roles based on game events
+for i, v in pairs(game:GetService("Workspace").Game:GetChildren()) do
+    local folder = v.Name
+    v.ChildAdded:Connect(function(p)
+        local plr = game.Players:FindFirstChild(p.Name)
+        if folder == "Mafia" or folder == "Vampire" or folder == "Coven" or folder == "Medium" or folder == "Werewolf" or folder == "Jailor" or folder == "Therapist" then
+            if not plr:GetAttribute("NSXFA") then
+                plr:SetAttribute("NSXFA", folder)
+                sendmsg('[' .. plr:GetAttribute("NSXFA") .. "] (" .. plr.PlayerData.DisplayName.Value .. ")[" .. plr.PlayerData.Number.Value .. "] has been exposed \n")
+            end
+        end
+        p.ChildAdded:Connect(function(ai)
+            if ai == "WerewolfVal" then
+                if not plr:GetAttribute("NSXFA") then
+                    plr:SetAttribute("NSXFA", "Werewolf")
+                    sendmsg('[' .. plr:GetAttribute("NSXFA") .. "] (" .. plr.PlayerData.DisplayName.Value .. ")[" .. plr.PlayerData.Number.Value .. "] has been exposed \n")
+                end
+            end
+        end)
+    end)
+end
+
+-- Detecting when players equip tools
+game.Players.DescendantAdded:Connect(function(t)
+    if t:IsA("Tool") then
+        local plr = t.Parent.Parent
+        local tool = t
+        if not game.Players:FindFirstChild(t.Parent.Parent.Name):GetAttribute("NSXFA") then
+            if gunsandroles[t.Name] ~= nil then
+                plr:SetAttribute("NSXFA", gunsandroles[t.Name])
+            end
+            wait()
+            sendmsg("[" .. (plr:GetAttribute("NSXFA") or "Unknown") .. "] (" .. plr.PlayerData.DisplayName.Value .. ")[" .. plr.PlayerData.Number.Value .. "] was found with " .. tool.Name .. '\n')
+        end
+    end
+end)
+
+-- Continuous monitoring and display of player roles
+for i, plr in pairs(game.Players:GetChildren()) do
+    local v = plr
+    if plr:GetAttribute("NSXFA") then
+        sendmsg('[' .. plr:GetAttribute("NSXFA") .. "] (" .. plr.PlayerData.DisplayName.Value .. ")[" .. plr.PlayerData.Number.Value .. "] has been exposed \n")
+    end
+    spawn(function()
+        while wait() do
+            local charr = v.Character or v.CharacterAdded:Wait()
+
+            local oh = charr:FindFirstChild("Overhead", true)
+            if oh then
+                oh.AlwaysOnTop = true
+                if v == game.Players.LocalPlayer then
+                    oh.PlayerName.Text = '[' .. plr.PlayerData.Number.Value .. '] ' .. plr.PlayerData.DisplayName.Value
+                    oh.PlayerName.TextColor3 = Color3.fromRGB(255, 80, 192)
+                elseif v:GetAttribute("NSXFA") ~= nil and rolesandcolors[v:GetAttribute("NSXFA")] ~= nil then
+                    oh.PlayerName.Text = '[' .. plr.PlayerData.Number.Value .. '] ' .. plr.PlayerData.DisplayName.Value
+                    oh.PlayerName.TextColor3 = rolesandcolors[v:GetAttribute("NSXFA")]
+                else
+                    oh.PlayerName.Text = '[' .. plr.PlayerData.Number.Value .. '] ' .. plr.PlayerData.DisplayName.Value
+                    oh.PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
+                end
+            end
+        end
+    end)
+end
